@@ -1,0 +1,2 @@
+datasource0 = glueContext.create_dynamic_frame.from_catalog(database = "sampledb", table_name = "tbl2parquet", additional_options={"mergeSchema": "true"},transformation_ctx = "datasource0")
+datasource0.printSchema()datasource0.show()
