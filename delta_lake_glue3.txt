@@ -1,0 +1,122 @@
+'''
+CREATE
+
+Python library path
+s3://MY-BUCKET-NAME/deltalake/delta-core_2.12-1.0.0.jar
+Dependent JARs path
+s3://MY-BUCKET-NAME/deltalake/delta-core_2.12-1.0.0.jar
+
+--conf
+spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
+--conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog \
+--conf spark.jars=s3://MY-BUCKET-NAME/deltalake/delta-core_2.12-1.0.0.jar
+
+'''
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+from pyspark.sql.types import *
+from delta.tables import *
+
+args = getResolvedOptions(sys.argv, ['JOB_NAME','RAW_DATA_S3_LOCATION','BASE_TBL_S3_LOCATION'])
+output_location = args['BASE_TBL_S3_LOCATION']
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args['JOB_NAME'], args)
+df=spark.read.format("csv").option("header", True).load(args['RAW_DATA_S3_LOCATION'])
+df.write.format("delta").mode("overwrite").option("mergeSchema", "true").save(output_location)
+deltaTable = DeltaTable.forPath(spark,output_location)
+deltaTable.generate("symlink_format_manifest")
+
+job.commit()
+
+'''
+ATHENA CREATE 
+
+CREATE EXTERNAL TABLE IF NOT EXISTS delta.sales(`Txn_Date` STRING,`Customer_Id` STRING,`Product_Id` STRING,`Quantity` STRING,`Total_Sales` STRING,`txn_id` STRING)
+ ROW FORMAT SERDE "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe" 
+ STORED AS INPUTFORMAT "org.apache.hadoop.hive.ql.io.SymlinkTextInputFormat" 
+ OUTPUTFORMAT "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat" 
+ LOCATION "s3://REPLACE-WITH-BUCKETNAME/deltalake/base_table/_symlink_format_manifest/"
+
+
+
+'''
+
+'''
+UPSERT
+
+Python library path
+s3://MY-BUCKET-NAME/deltalake/delta-core_2.12-1.0.0.jar
+Dependent JARs path
+s3://MY-BUCKET-NAME/deltalake/delta-core_2.12-1.0.0.jar
+
+--conf
+spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
+--conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog \
+--conf spark.jars=s3://MY-BUCKET-NAME/deltalake/delta-core_2.12-1.0.0.jar  
+
+'''
+
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+from pyspark.sql.types import *
+from delta.tables import *
+
+args = getResolvedOptions(sys.argv, ['JOB_NAME','BASE_TBL_S3_LOCATION','UPSERT_FILE_S3_LOCATION'])
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args['JOB_NAME'], args)
+base_tbl = DeltaTable.forPath(spark, args['BASE_TBL_S3_LOCATION'])
+upsert_dataset=spark.read.format("csv").option("header", True).load(args['UPSERT_FILE_S3_LOCATION'])
+base_tbl.alias("base_tbl").merge(upsert_dataset.alias("upsert_dataset"),"base_tbl.txn_id = upsert_dataset.txn_id").whenMatchedUpdate(set = { "Total_Sales" : "upsert_dataset.Total_Sales" } ).whenNotMatchedInsert(values ={"Txn_Date": "upsert_dataset.Txn_Date","Customer_Id": "upsert_dataset.Customer_Id","Product_Id": "upsert_dataset.Product_Id","Quantity": "upsert_dataset.Quantity","Total_Sales": "upsert_dataset.Total_Sales","txn_id":"upsert_dataset.txn_id"}).execute()
+base_tbl.generate("symlink_format_manifest")
+job.commit()
+
+'''
+DELETE
+
+Python library path
+s3://MY-BUCKET-NAME/deltalake/delta-core_2.12-1.0.0.jar
+Dependent JARs path
+s3://MY-BUCKET-NAME/deltalake/delta-core_2.12-1.0.0.jar
+
+--conf
+spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
+--conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog \
+--conf spark.jars=s3://MY-BUCKET-NAME/deltalake/delta-core_2.12-1.0.0.jar  
+
+'''
+
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+from pyspark.sql.types import *
+from delta.tables import *
+
+args = getResolvedOptions(sys.argv, ['JOB_NAME','BASE_TBL_S3_LOCATION','DELETE_IDS_S3_LOCATION'])
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args['JOB_NAME'], args)
+base_table = DeltaTable.forPath(spark, args['BASE_TBL_S3_LOCATION'])
+delete_ids=spark.read.format("csv").option("header", True).load(args['DELETE_IDS_S3_LOCATION'])
+base_table.alias("base_tbl").merge(delete_ids.alias("deletes"),"base_tbl.txn_id = deletes.txn_id").whenMatchedDelete().execute()
+base_table.generate("symlink_format_manifest")
+job.commit()
+
