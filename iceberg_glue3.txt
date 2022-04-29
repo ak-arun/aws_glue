@@ -1,0 +1,135 @@
+'''
+CREATE
+
+step 0 - create a glue catalog database iceberg 
+
+--conf
+spark.sql.catalog.my_catalog=org.apache.iceberg.spark.SparkCatalog \
+--conf spark.sql.catalog.my_catalog.warehouse=s3://MY-BUCKET/iceberg \
+--conf spark.sql.catalog.my_catalog.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog \
+--conf spark.sql.catalog.my_catalog.io-impl=org.apache.iceberg.aws.s3.S3FileIO \
+--conf spark.sql.catalog.my_catalog.lock-impl=org.apache.iceberg.aws.glue.DynamoLockManager \
+--conf spark.sql.catalog.my_catalog.lock.table=icebergLockTable \
+--conf spark.jars=s3://MY-BUCKET-NAME/iceberg/iceberg-spark3-runtime-0.13.1.jar,\
+s3://MY-BUCKET-NAME/iceberg/url-connection-client-2.15.40.jar,\
+s3://MY-BUCKET-NAME/iceberg/bundle-2.15.40.jar
+
+Dependent JARs path
+s3://MY-BUCKET-NAME/iceberg/iceberg-spark3-runtime-0.13.1.jar,\
+s3://MY-BUCKET-NAME/iceberg/url-connection-client-2.15.40.jar,\
+s3://MY-BUCKET-NAME/iceberg/bundle-2.15.40.jar
+
+'''
+
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+from pyspark.sql import SparkSession
+from pyspark.sql.types import *
+
+## @params: [JOB_NAME]
+args = getResolvedOptions(sys.argv, ['JOB_NAME','RAW_DATA_S3_LOCATION','BASE_TBL_S3_LOCATION'])
+
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args['JOB_NAME'], args)
+
+raw_location = args['RAW_DATA_S3_LOCATION']
+base_tbl_location = args['BASE_TBL_S3_LOCATION']
+
+df=spark.read.format("csv").option("header", True).load(raw_location)
+ddl = spark.sparkContext._jvm.org.apache.spark.sql.types.DataType.fromJson(df.schema.json()).toDDL()
+query = "CREATE TABLE IF NOT EXISTS my_catalog.iceberg.sales("+ddl+") USING iceberg location '"+base_tbl_location+"'"
+spark.sql(query)
+df.writeTo("my_catalog.iceberg.sales").append()
+job.commit()
+
+
+'''
+UPSERT
+
+--conf
+spark.sql.catalog.my_catalog=org.apache.iceberg.spark.SparkCatalog \
+--conf spark.sql.catalog.my_catalog.warehouse=s3://MY-BUCKET-NAME/iceberg \
+--conf spark.sql.catalog.my_catalog.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog \
+--conf spark.sql.catalog.my_catalog.io-impl=org.apache.iceberg.aws.s3.S3FileIO \
+--conf spark.sql.catalog.my_catalog.lock-impl=org.apache.iceberg.aws.glue.DynamoLockManager \
+--conf spark.sql.catalog.my_catalog.lock.table=icebergLockTable \
+--conf spark.jars=s3://MY-BUCKET-NAME/iceberg/iceberg-spark3-runtime-0.13.1.jar,\
+s3://MY-BUCKET-NAME/iceberg/url-connection-client-2.15.40.jar,\
+s3://MY-BUCKET-NAME/iceberg/bundle-2.15.40.jar \
+--conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+
+Dependent JARs path
+s3://MY-BUCKET-NAME/iceberg/iceberg-spark3-runtime-0.13.1.jar,\
+s3://MY-BUCKET-NAME/iceberg/url-connection-client-2.15.40.jar,\
+s3://MY-BUCKET-NAME/iceberg/bundle-2.15.40.jar
+
+'''
+
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+
+## @params: [JOB_NAME]
+args = getResolvedOptions(sys.argv, ['JOB_NAME','UPSERT_FILE_S3_LOCATION'])
+
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+base_tbl = spark.sql("select * from my_catalog.iceberg.sales")
+upsert_dataset_s3=spark.read.format("csv").option("header", True).load(args['UPSERT_FILE_S3_LOCATION'])
+upsert_dataset_s3.createOrReplaceTempView("upsert_dataset")
+spark.sql("merge into my_catalog.iceberg.sales history using (select * from upsert_dataset) incr on history.txn_id=incr.txn_id when matched then update set history.total_sales=incr.total_sales when not matched then insert *")
+job = Job(glueContext)
+job.init(args['JOB_NAME'], args)
+job.commit()
+
+'''
+DELETE
+
+Dependent JARs path
+s3://MY-BUCKET-NAME/iceberg/iceberg-spark3-runtime-0.13.1.jar,\
+s3://MY-BUCKET-NAME/iceberg/url-connection-client-2.15.40.jar,\
+s3://MY-BUCKET-NAME/iceberg/bundle-2.15.40.jar
+
+--conf
+spark.sql.catalog.my_catalog=org.apache.iceberg.spark.SparkCatalog \
+--conf spark.sql.catalog.my_catalog.warehouse=s3://MY-BUCKET-NAME/iceberg \
+--conf spark.sql.catalog.my_catalog.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog \
+--conf spark.sql.catalog.my_catalog.io-impl=org.apache.iceberg.aws.s3.S3FileIO \
+--conf spark.sql.catalog.my_catalog.lock-impl=org.apache.iceberg.aws.glue.DynamoLockManager \
+--conf spark.sql.catalog.my_catalog.lock.table=icebergLockTable \
+--conf spark.jars=s3://MY-BUCKET-NAME/iceberg/iceberg-spark3-runtime-0.13.1.jar,\
+s3://MY-BUCKET-NAME/iceberg/url-connection-client-2.15.40.jar,\
+s3://MY-BUCKET-NAME/iceberg/bundle-2.15.40.jar \
+--conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+
+'''
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+
+## @params: [JOB_NAME]
+args = getResolvedOptions(sys.argv, ['JOB_NAME','DELETE_IDS_S3_LOCATION'])
+
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args['JOB_NAME'], args)
+ids_to_delete=spark.read.format("csv").option("header", True).load(args['DELETE_IDS_S3_LOCATION'])
+ids_to_delete.createOrReplaceTempView("ids_to_delete")
+spark.sql("delete from my_catalog.iceberg.sales where txn_id in (select txn_id from ids_to_delete)")
+job.commit()
