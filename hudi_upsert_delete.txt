@@ -1,0 +1,39 @@
+upsert_location = args['UPSERT_FILE_S3_LOCATION']
+base_tbl_location = args['BASE_TBL_S3_LOCATION']
+
+hudiOptions = {
+'hoodie.table.name': 'sales',
+'hoodie.datasource.write.recordkey.field': 'txn_id',
+'hoodie.datasource.write.precombine.field': 'Total_Sales'
+}
+
+df=spark.read.format("csv").option("header", True).load(upsert_location)
+
+df.write \
+.format('org.apache.hudi') \
+.option('hoodie.datasource.write.operation', 'upsert') \
+.options(**hudiOptions) \
+.mode('append') \
+.save(base_tbl_location)
+
+''' 
+the code snippet just reads a new file with matching schema 
+contains records to insert 
+contains records to upsert based on id column
+upserts records 
+no cglue catalog changes are made - refer the other code to create data set for dependencies and configurations
+'''
+
+hudi_options = {
+  'hoodie.table.name': 'sales',
+  'hoodie.datasource.write.recordkey.field': 'txn_id',
+  'hoodie.datasource.write.table.name': 'sales',
+  'hoodie.datasource.write.operation': 'delete',
+  'hoodie.datasource.write.precombine.field': 'Total_Sales'
+}
+ids_to_delete=spark.read.format("csv").option("header", True).load(args['DELETE_IDS_S3_LOCATION'])
+ids_to_delete=ids_to_delete.withColumn("Total_Sales",lit(0.0))
+ids_to_delete.write.format("hudi"). \
+  options(**hudi_options). \
+  mode("append"). \
+  save(args['BASE_TBL_S3_LOCATION'])
