@@ -1,0 +1,11 @@
+def reformat(partitionData):
+  updatedData = []
+  for row in partitionData:
+    name=row.firstname+","+row.lastname
+    bonus=row.salary*10/100
+    updatedData.append([name,bonus])
+  return iter(updatedData)
+
+df2=df.rdd.mapPartitions(reformat).toDF(["name","bonus"])
+df2.show()
+#https://sparkbyexamples.com/pyspark/pyspark-mappartitions/
