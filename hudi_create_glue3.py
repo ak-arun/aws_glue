@@ -50,5 +50,35 @@ s3://MY-BUCKET-NAME/hudi/spark-avro_2.12-3.0.1.jar
 
 '''
 --conf
-spark.serializer=org.apache.spark.serializer.KryoSerializer --conf spark.sql.hive.convertMetastoreParquet=false --conf spark.jars=s3://MY-BUCKET-NAME/hudi/calcite-core-1.16.0.jar,s3://MY-BUCKET-NAME/hudi/libfb303-0.9.3.jar,s3://MY-BUCKET-NAME/hudi/hudi-spark3-bundle_2.12-0.9.0.jar,s3://MY-BUCKET-NAME/hudi/spark-avro_2.12-3.0.1.jar --conf spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory
+spark.serializer=org.apache.spark.serializer.KryoSerializer \
+--conf spark.sql.hive.convertMetastoreParquet=false \
+--conf spark.jars=s3://MY-BUCKET-NAME/hudi/calcite-core-1.16.0.jar,\
+s3://MY-BUCKET-NAME/hudi/libfb303-0.9.3.jar,\
+s3://MY-BUCKET-NAME/hudi/hudi-spark3-bundle_2.12-0.9.0.jar,\
+s3://MY-BUCKET-NAME/hudi/spark-avro_2.12-3.0.1.jar \
+--conf spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory
+
+if not performing catalog operations, create table manually 
+
+CREATE EXTERNAL TABLE hudi.sales(
+  `_hoodie_commit_time` string, 
+  `_hoodie_commit_seqno` string, 
+  `_hoodie_record_key` string, 
+  `_hoodie_partition_path` string, 
+  `_hoodie_file_name` string, 
+  `txn_date` string, 
+  `customer_id` string, 
+  `product_id` string, 
+  `quantity` string, 
+  `total_sales` string, 
+  `txn_id` string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe' 
+STORED AS INPUTFORMAT 
+  'org.apache.hudi.hadoop.HoodieParquetInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+LOCATION 's3://BUCKETNAME/hudi/base_table/default'
+
+
 '''
