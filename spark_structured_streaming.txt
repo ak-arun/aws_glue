@@ -1,0 +1,71 @@
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+from pyspark.sql import DataFrame, Row
+import datetime
+from awsglue import DynamicFrame
+from pyspark.sql.types import StringType
+from pyspark.sql.functions import udf
+from pyspark.sql import Row
+import json
+
+def removeSpecialCharsFromRow(stringJson):
+    stringJson=stringJson.replace("\\\\\\\"", "\"")
+    stringJson=stringJson.replace("\\\"", "\"")
+    stringJson=stringJson.replace("\"{", "{")
+    stringJson=stringJson.replace("\"}\"", "}")
+    return stringJson
+
+
+clean_udf = udf(removeSpecialCharsFromRow)
+
+
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+kinesisDF=spark.readStream.format("kinesis").option("streamName","MY_STREAM_NAME").option("endpointUrl", "https://kinesis.REGION.amazonaws.com").option("startingPosition", "TRIM_HORIZON").load()
+storeDF=kinesisDF.selectExpr("cast (data as STRING) inputData").select(clean_udf('inputData')).writeStream.format("text").option("checkpointLocation", "s3://MY_BUCKET/checkpoint/").start("s3://MY_BUCKET/data/")
+storeDF.awaitTermination()
+
+'''
+another other example 
+'''
+
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+from pyspark.sql import DataFrame, Row
+import datetime
+from awsglue import DynamicFrame
+from pyspark.sql.types import StringType
+from pyspark.sql.functions import udf
+from pyspark.sql import Row
+import json
+from pyspark.sql.types import *
+from pyspark.sql.functions import *
+
+
+
+pythonSchema = StructType().add("dt",TimestampType()).add("id",StringType()).add("c1", LongType()).add("c2", LongType())
+
+
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+kinesisDF=spark.readStream.format("kinesis").option("streamName","MY_STREAM_NAME").option("endpointUrl", "https://kinesis.MY_REGION.amazonaws.com").option("startingPosition", "TRIM_HORIZON").load()
+#dataDevicesDF=kinesisDF.selectExpr('CAST(data AS STRING)').select(from_json('data', pythonSchema).alias('data')).select('data.dt','data.id','data.c1','data.c2').writeStream.format("csv").option("checkpointLocation", "s3a://MY-BUCKET/checkpoint/cp26/").start("s3a://MY-BUCKET/op26/")
+#dataDevicesDF.awaitTermination()   
+
+dataDevicesDF=kinesisDF.selectExpr('CAST(data AS STRING)').select(from_json('data', pythonSchema).alias('data')).select('data.dt','data.id','data.c1','data.c2')
+queryResults=dataDevicesDF.withWatermark("dt", "3 seconds").groupBy(col("id"),window(col("dt"),"5 seconds","3 seconds")).sum("c1","c2")
+#write = queryResults.writeStream.outputMode("update").format("console").option("truncate", False).start()
+write = queryResults.writeStream.format("json").option("checkpointLocation", "s3a://MY-BUCKET/checkpoint/cp30/").start("s3a://MY-BUCKET/op30/")
+write.awaitTermination() 
