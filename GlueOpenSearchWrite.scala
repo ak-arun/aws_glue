@@ -13,6 +13,8 @@ import scala.collection.JavaConverters._
 import org.apache.spark.SparkConf
 import org.elasticsearch.spark._  
 
+//TODO remove un-used imports
+
 object GlueApp {
   def main(sysArgs: Array[String]) {
     
