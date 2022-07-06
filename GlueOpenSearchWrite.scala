@@ -21,7 +21,7 @@ object GlueApp {
     val conf = new SparkConf()
     
     conf.set("es.nodes.wan.only", "true")
-    conf.set("es.nodes", "https://BLAH.com")
+    conf.set("es.nodes", "https://BLAH.example.com")
     conf.set("es.port", "443")
     conf.set("es.net.http.auth.user","SOME USERNAME")
     conf.set("es.net.http.auth.pass","SOME PASSWORD")
