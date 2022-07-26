@@ -1,0 +1,20 @@
+{
+	"type": "record",
+	"name": "purchases",
+	"fields": [{
+		"name": "name",
+		"type": "string"
+	}, {
+		"name": "product",
+		"type": "string"
+	}, {
+		"name": "color",
+		"type": "string"
+	}, {
+		"name": "price",
+		"type": "int"
+	}, {
+		"name": "date",
+		"type": "string"
+	}]
+}
