@@ -1,0 +1,9 @@
+Ref : https://anilkulkarni.com/2019/06/how-to-view-spark-history-logs-locally/
+1 - On a MacOs : brew install apache-spark
+2- Create a directory for the logs.
+3- Move the downloaded logs in the previous step to the logs directory and unpack them.
+4- Create a file named log.properties
+5- Inside log.properties, add spark.history.fs.logDirectory=<path to the spark-logs directory>
+6- Navigate to /usr/local/Cellar/apache-spark/<version>/libexec/sbin
+7- Execute sh start-history-server.sh --properties-file <path to log.properties>
+8- Navigate to http://localhost:18080 on browser.
