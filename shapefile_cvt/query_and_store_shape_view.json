@@ -1,0 +1,22 @@
+{
+  "name": "query_and_store_shape_view",
+  "displayName": "Query shape view",
+  "description": "Queries a shape view and also stores the query result as Geo Json",
+  "functionName": "query_and_store_shape_view",
+  "parameters": [
+    {
+      "name": "query",
+      "displayName": "Query",
+      "type": "String",
+      "description": "Query against the shape file",
+      "isOptional": false
+    },
+    {
+      "name": "location",
+      "displayName": "S3 GeoJson Path",
+      "type": "String",
+      "description": "S3 Path to create the GeoJson output",
+      "isOptional": true
+    }
+  ]
+}
