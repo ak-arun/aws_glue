@@ -8,3 +8,5 @@ https://sedona.apache.org/latest/setup/install-python/
 
 --conf spark.sql.extensions=org.apache.sedona.sql.SedonaSqlExtensions
 
+Spark 3.5.4
+
