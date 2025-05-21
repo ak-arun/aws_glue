@@ -1,0 +1,22 @@
+{
+  "name": "create_dxf",
+  "displayName": "Create DXF",
+  "description": "Create a dxf file from spark data frame",
+  "functionName": "create_dxf",
+  "parameters": [
+    {
+      "name": "s3_path",
+      "displayName": "S3 Path",
+      "type": "String",
+      "description": "S3 Path to store the dxf file",
+      "isOptional": false
+    },
+    {
+      "name": "s3_filename",
+      "displayName": "Target File Name",
+      "type": "String",
+      "description": "Name of the S3 dxf file",
+      "isOptional": false
+    }
+  ]
+}
