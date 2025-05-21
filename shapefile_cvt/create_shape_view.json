@@ -1,0 +1,22 @@
+{
+  "name": "create_shape_view",
+  "displayName": "Create Shape View",
+  "description": "Create a queryable view from a folder having shape files",
+  "functionName": "create_shape_view",
+  "parameters": [
+    {
+      "name": "shape_file_path",
+      "displayName": "Shape File Location",
+      "type": "String",
+      "description": "S3 Path to the rpefix containg shape files",
+      "isOptional": false
+    },
+    {
+      "name": "shape_view_name",
+      "displayName": "View Name",
+      "type": "String",
+      "description": "Name of the view",
+      "isOptional": false
+    }
+  ]
+}
