@@ -1,0 +1,20 @@
+##protocol version is too new for Athena DDL.
+
+CREATE EXTERNAL TABLE table_name(
+col array<string>
+)
+LOCATION 'S3_LOCATION'
+TBLPROPERTIES ('spark.sql.sources.provider' = 'delta')
+
+
+###Glue Catalog Configuration
+
+Navigate to table in Glue catalog
+
+Select table and choose "Edit" from Actions
+
+Add Serde parameter:
+
+Key: path
+
+Value: S3_LOCATION
