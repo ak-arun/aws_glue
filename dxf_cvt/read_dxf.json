@@ -1,0 +1,15 @@
+{
+  "name": "read_dxf",
+  "displayName": "Read DXF",
+  "description": "Read a dxf file from path",
+  "functionName": "read_dxf",
+  "parameters": [
+    {
+      "name": "s3_path",
+      "displayName": "S3 Path",
+      "type": "String",
+      "description": "S3 Path to the dxf file",
+      "isOptional": false
+    }
+  ]
+}
