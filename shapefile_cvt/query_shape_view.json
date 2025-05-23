@@ -1,0 +1,22 @@
+{
+  "name": "query_shape_view",
+  "displayName": "Query shape view",
+  "description": "Queries a shape view and creates a new view",
+  "functionName": "query_shape_view",
+  "parameters": [
+    {
+      "name": "query",
+      "displayName": "Query",
+      "type": "String",
+      "description": "Query against the shape file",
+      "isOptional": false
+    },
+    {
+      "name": "view",
+      "displayName": "View Name",
+      "type": "String",
+      "description": "Name of the new view to store the query result",
+      "isOptional": false
+    }
+  ]
+}
