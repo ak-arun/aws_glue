@@ -1,0 +1,30 @@
+{
+  "name": "export_shape_view",
+  "displayName": "Export shape view",
+  "description": "Store Shape File to S3",
+  "functionName": "export_shape_view",
+  "parameters": [
+    {
+      "name": "view",
+      "displayName": "View Name",
+      "type": "String",
+      "description": "Name of the view to store to S3",
+      "isOptional": false
+    },
+    {
+      "name": "location",
+      "displayName": "S3 Location",
+      "type": "String",
+      "description": "S3 location to store the shape file",
+      "isOptional": false
+    }
+    ,
+    {
+      "name": "filename",
+      "displayName": "Shape Filename",
+      "type": "String",
+      "description": "Name of the shape file. If not specified, will use the view name",
+      "isOptional": true
+    }
+  ]
+}
