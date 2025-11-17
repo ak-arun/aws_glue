@@ -45,10 +45,11 @@ public final class GlueMongoDBCustomSSLClientFactory implements MongoClientFacto
             
             MongoClientSettings settings = MongoClientSettings.builder()
                 .applyConnectionString(config.getConnectionString())
-                .applyToSslSettings(builder -> 
-                    builder.context(sslContext)
-                           .enabled(true)
-                           .invalidHostNameAllowed(true))
+                .applyToSslSettings(builder -> {
+                    // Set the custom SSL context and ensure SSL is enabled
+                    builder.context(sslContext).enabled(true);
+                    // Let other SSL settings (like invalidHostNameAllowed) come from connection string
+                })
                 .build();
                 
             return MongoClients.create(settings, mongoDriverInformation);
