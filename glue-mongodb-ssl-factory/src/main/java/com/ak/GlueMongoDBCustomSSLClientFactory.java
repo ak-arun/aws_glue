@@ -58,10 +58,20 @@ public final class GlueMongoDBCustomSSLClientFactory implements MongoClientFacto
     }
     
     private SSLContext createCombinedSSLContext() throws Exception {
-        // Load Glue's default truststore
+        // Load Glue's default truststore from system properties (safer than hardcoding)
+        String glueTrustStorePath = System.getProperty("javax.net.ssl.trustStore");
+        String glueTrustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword", "");
+        
         KeyStore glueTrustStore = KeyStore.getInstance("JKS");
-        try (FileInputStream fis = new FileInputStream("/opt/amazon/certs/InternalAndExternalAndAWSTrustStore.jks")) {
-            glueTrustStore.load(fis, "amazon".toCharArray());
+        if (glueTrustStorePath != null) {
+            try (FileInputStream fis = new FileInputStream(glueTrustStorePath)) {
+                glueTrustStore.load(fis, glueTrustStorePassword.toCharArray());
+            }
+        } else {
+            // Fallback to hardcoded path if system property not set
+            try (FileInputStream fis = new FileInputStream("/opt/amazon/certs/InternalAndExternalAndAWSTrustStore.jks")) {
+                glueTrustStore.load(fis, "amazon".toCharArray());
+            }
         }
         
         // Load custom keystore for client certificates and additional trust
