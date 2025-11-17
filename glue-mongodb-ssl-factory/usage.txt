@@ -1,1 +1,18 @@
+connection_options = {
+    "connection.uri": "mongodb://wheterv:whatever/testdb?ssl=true",
+    "database": "testdb",
+    "collection": "users",
+    "mongoClientFactory": "com.ak.GlueMongoDBCustomSSLClientFactory",
+    "customKeystorePath":"/tmp/keystore.jks",
+    "customKeystorePassword":"whetever"
+}
 
+# Read from MongoDB
+df = spark.read.format("mongodb").options(**connection_options).load()
+df.show(10,False)
+df.printSchema()
+
+
+--extra-jars s3://BUCKET/jars/mongo-spark-connector_2.12-10.2.0.jar,s3://BUCKET/jars/glue-mongodb-ssl-factory-1.0.jar
+--extra-files s3://BUCKET/keystore.jks
+	
